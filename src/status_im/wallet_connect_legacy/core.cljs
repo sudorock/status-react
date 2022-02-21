@@ -32,8 +32,8 @@
 
 (re-frame/reg-fx
  :wc-1-update-session
- (fn [[connector address]]
-   (^js .updateSession connector (clj->js {:chainId 1 :accounts [address]})))) ;; TODO: Send current network chain id
+ (fn [[connector chain-id address]]
+   (^js .updateSession connector (clj->js {:chainId chain-id :accounts [address]}))))
 
 (re-frame/reg-fx
  :wc-1-kill-session
@@ -51,7 +51,7 @@
   (let [proposal (js->clj request-event :keywordize-keys true)
         params (first (:params proposal))
         metadata (merge (:peerMeta params) {:wc-version 1})
-        chain-id (:chainId params)]
+        chain-id @(re-frame/subscribe [:chain-id])]
     {:db (assoc db :wallet-connect-legacy/proposal-connector connector :wallet-connect-legacy/proposal-chain-id chain-id :wallet-connect/proposal-metadata metadata)
      :show-wallet-connect-sheet nil}))
 
@@ -114,9 +114,10 @@
   {:events [:wallet-connect-legacy/change-session-account]}
   [{:keys [db]} session account]
   (let [connector (:connector session)
-        address (:address account)]
+        address (:address account)
+        chain-id @(re-frame/subscribe [:chain-id])]
     {:hide-wallet-connect-app-management-sheet nil
-     :wc-1-update-session [connector address]
+     :wc-1-update-session [connector chain-id address]
      :db (assoc db :wallet-connect/showing-app-management-sheet? false)}))
 
 (fx/defn disconnect-session
