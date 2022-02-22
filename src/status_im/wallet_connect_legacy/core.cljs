@@ -52,7 +52,10 @@
   (let [proposal (types/js->clj request-event)
         params (first (:params proposal))
         metadata (merge (:peerMeta params) {:wc-version 1})
-        chain-id (get db :chain-id)]
+        networks (get db :networks/networks)
+        current-network-id (get db :networks/current-network)
+        current-network (get networks current-network-id)
+        chain-id (get-in current-network [:config :NetworkId])]
     {:db (assoc db :wallet-connect-legacy/proposal-connector connector :wallet-connect-legacy/proposal-chain-id chain-id :wallet-connect/proposal-metadata metadata)
      :show-wallet-connect-sheet nil}))
 
@@ -116,7 +119,10 @@
   [{:keys [db]} session account]
   (let [connector (:connector session)
         address (:address account)
-        chain-id @(re-frame/subscribe [:chain-id])]
+        networks (get db :networks/networks)
+        current-network-id (get db :networks/current-network)
+        current-network (get networks current-network-id)
+        chain-id (get-in current-network [:config :NetworkId])]
     {:hide-wallet-connect-app-management-sheet nil
      :wc-1-update-session [connector chain-id address]
      :db (assoc db :wallet-connect/showing-app-management-sheet? false)}))
