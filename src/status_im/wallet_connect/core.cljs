@@ -9,7 +9,8 @@
             [status-im.browser.core :as browser]
             [taoensso.timbre :as log]
             [status-im.async-storage.core :as async-storage]
-            [status-im.utils.config :as config]))
+            [status-im.utils.config :as config]
+            [status-im.utils.types :as types]))
 
 (fx/defn switch-wallet-connect-enabled
   {:events [:multiaccounts.ui/switch-wallet-connect-enabled]}
@@ -28,7 +29,7 @@
 (fx/defn proposal-handler
   {:events [:wallet-connect/proposal]}
   [{:keys [db] :as cofx} request-event]
-  (let [proposal (js->clj request-event :keywordize-keys true)
+  (let [proposal (types/js->clj request-event)
         proposer (:proposer proposal)
         metadata (:metadata proposer)]
     {:db (assoc db :wallet-connect/proposal proposal :wallet-connect/proposal-metadata metadata)
@@ -37,23 +38,23 @@
 (fx/defn session-connected
   {:events [:wallet-connect/created]}
   [{:keys [db]} session]
-  (let [session (merge (js->clj session :keywordize-keys true) {:wc-version 2})
+  (let [session (merge (types/js->clj session) {:wc-version 2})
         client (get db :wallet-connect/client)]
     (log/debug "[wallet connect] session created - " session)
     {:show-wallet-connect-success-sheet nil
-     :db (assoc db :wallet-connect/session-connected session :wallet-connect/sessions (js->clj (.-values (.-session client)) :keywordize-keys true))}))
+     :db (assoc db :wallet-connect/session-connected session :wallet-connect/sessions (types/js->clj (.-values (.-session client))))}))
 
 (fx/defn manage-app
   {:events [:wallet-connect/manage-app]}
   [{:keys [db]} session]
-  (let [session (js->clj session :keywordize-keys true)]
+  (let [session (types/js->clj session)]
     {:db (assoc db :wallet-connect/session-managed session :wallet-connect/showing-app-management-sheet? true)
      :show-wallet-connect-app-management-sheet nil}))
 
 (fx/defn request-handler
   {:events [:wallet-connect/request]}
   [{:keys [db] :as cofx} request-event]
-  (let [request (js->clj request-event :keywordize-keys true)
+  (let [request (types/js->clj request-event)
         params (:request request)
         pending-requests (or (:wallet-connect/pending-requests db) [])
         new-pending-requests (conj pending-requests request)
@@ -184,7 +185,7 @@
      :hide-wallet-connect-success-sheet nil
      :wc-2-client-disconnect [client topic]
      :db (-> db
-             (assoc :wallet-connect/sessions (js->clj (.-values (.-session client)) :keywordize-keys true))
+             (assoc :wallet-connect/sessions (types/js->clj (.-values (.-session client))))
              (dissoc :wallet-connect/session-managed))}))
 
 (fx/defn pair-session
@@ -201,7 +202,7 @@
 (fx/defn wallet-connect-client-initate
   {:events [:wallet-connect/client-init]}
   [{:keys [db] :as cofx} client]
-  {:db (assoc db :wallet-connect/client client :wallet-connect/sessions (js->clj (.-values (.-session client)) :keywordize-keys true))
+  {:db (assoc db :wallet-connect/client client :wallet-connect/sessions (types/js->clj (.-values (.-session client))))
    :wc-2-subscribe-to-events client})
 
 (fx/defn update-sessions
@@ -209,7 +210,7 @@
   [{:keys [db] :as cofx}]
   (let [client (get db :wallet-connect/client)]
     {:db (-> db
-             (assoc :wallet-connect/sessions (js->clj (.-values (.-session client)) :keywordize-keys true))
+             (assoc :wallet-connect/sessions (types/js->clj (.-values (.-session client))))
              (dissoc :wallet-connect/session-managed))}))
 
 (fx/defn wallet-connect-complete-transaction

@@ -6,52 +6,53 @@
             [status-im.signing.core :as signing]
             [status-im.utils.wallet-connect-legacy :as wallet-connect-legacy]
             [status-im.browser.core :as browser]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [status-im.utils.types :as types]))
 
 (re-frame/reg-fx
  :wc-1-subscribe-to-events
- (fn [connector]
-   (^js .on connector "session_request" (fn [_ payload]
-                                          (re-frame/dispatch [:wallet-connect-legacy/proposal payload connector])))
-   (^js .on connector "connect" (fn [_ payload]
-                                  (re-frame/dispatch [:wallet-connect-legacy/created payload])))
-   (^js .on connector "call_request" (fn [_ payload]
-                                       (re-frame/dispatch [:wallet-connect-legacy/request-received (js->clj payload :keywordize-keys true) connector])))
-   (^js .on connector "session_update" (fn [_ payload]
-                                         (re-frame/dispatch [:wallet-connect-legacy/update-sessions (js->clj payload :keywordize-keys true) connector])))))
+ (fn [^js connector]
+   (.on connector "session_request" (fn [_ payload]
+                                      (re-frame/dispatch [:wallet-connect-legacy/proposal payload connector])))
+   (.on connector "connect" (fn [_ payload]
+                              (re-frame/dispatch [:wallet-connect-legacy/created payload])))
+   (.on connector "call_request" (fn [_ payload]
+                                   (re-frame/dispatch [:wallet-connect-legacy/request-received (types/js->clj payload) connector])))
+   (.on connector "session_update" (fn [_ payload]
+                                     (re-frame/dispatch [:wallet-connect-legacy/update-sessions (types/js->clj payload) connector])))))
 
 (re-frame/reg-fx
  :wc-1-approve-session
- (fn [[connector accounts proposal-chain-id]]
-   (^js .approveSession connector (clj->js {:accounts accounts :chainId proposal-chain-id}))))
+ (fn [[^js connector accounts proposal-chain-id]]
+   (.approveSession connector (clj->js {:accounts accounts :chainId proposal-chain-id}))))
 
 (re-frame/reg-fx
  :wc-1-reject-session
- (fn [connector]
-   (^js .rejectSession connector)))
+ (fn [^js connector]
+   (.rejectSession connector)))
 
 (re-frame/reg-fx
  :wc-1-update-session
- (fn [[connector chain-id address]]
-   (^js .updateSession connector (clj->js {:chainId chain-id :accounts [address]}))))
+ (fn [[^js connector chain-id address]]
+   (.updateSession connector (clj->js {:chainId chain-id :accounts [address]}))))
 
 (re-frame/reg-fx
  :wc-1-kill-session
- (fn [connector]
-   (^js .killSession connector)))
+ (fn [^js connector]
+   (.killSession connector)))
 
 (re-frame/reg-fx
  :wc-1-approve-request
- (fn [[connector response]]
-   (^js .approveRequest connector (clj->js response))))
+ (fn [[^js connector response]]
+   (.approveRequest connector (clj->js response))))
 
 (fx/defn proposal-handler
   {:events [:wallet-connect-legacy/proposal]}
   [{:keys [db] :as cofx} request-event connector]
-  (let [proposal (js->clj request-event :keywordize-keys true)
+  (let [proposal (types/js->clj request-event)
         params (first (:params proposal))
         metadata (merge (:peerMeta params) {:wc-version 1})
-        chain-id @(re-frame/subscribe [:chain-id])]
+        chain-id (get db :chain-id)]
     {:db (assoc db :wallet-connect-legacy/proposal-connector connector :wallet-connect-legacy/proposal-chain-id chain-id :wallet-connect/proposal-metadata metadata)
      :show-wallet-connect-sheet nil}))
 
@@ -59,8 +60,8 @@
   {:events [:wallet-connect-legacy/created]}
   [{:keys [db]} session]
   (let [connector (get db :wallet-connect-legacy/proposal-connector)
-        session (merge (js->clj session :keywordize-keys true) {:wc-version 1
-                                                                :connector connector})
+        session (merge (types/js->clj session) {:wc-version 1
+                                                :connector connector})
         params (first (:params session))
         metadata (:peerMeta params)
         account (first (:accounts params))
@@ -79,7 +80,7 @@
 (fx/defn request-handler
   {:events [:wallet-connect-legacy/request]}
   [{:keys [db] :as cofx} request-event]
-  (let [request (js->clj request-event :keywordize-keys true)
+  (let [request (types/js->clj request-event)
         params (:request request)
         pending-requests (or (:wallet-connect-legacy/pending-requests db) [])
         new-pending-requests (conj pending-requests request)

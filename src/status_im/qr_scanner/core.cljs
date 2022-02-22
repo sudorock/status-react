@@ -79,7 +79,9 @@
             (navigation/change-tab :wallet)
             (navigation/pop-to-root-tab :wallet-stack)))
 
-(fx/defn handle-wallet-connect [cofx data]
+(fx/defn handle-wallet-connect
+  {:events [::handle-wallet-connect-uri]}
+  [cofx data]
   (let [wc-version (last (string/split (first (string/split data "?")) "@"))]
     (if (= wc-version "1")
       {:dispatch [:wallet-connect-legacy/pair data]}
