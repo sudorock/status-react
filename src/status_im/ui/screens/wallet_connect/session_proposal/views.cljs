@@ -156,12 +156,12 @@
          [quo/button
           {:type :secondary
            :theme :secondary
-           :on-press #(re-frame/dispatch (if (= wc-version 1) [:wallet-connect-legacy/disconnect session] [:wallet-connect/disconnect topic]))}
+           :on-press #(re-frame/dispatch (if (= wc-version 1) [:wallet-connect-legacy/disconnect session-legacy] [:wallet-connect/disconnect topic]))}
           (i18n/label :t/disconnect)]]
         [account-selector
          visible-accounts
          selected-account
-         #(re-frame/dispatch (if (= wc-version 1) [:wallet-connect-legacy/change-session-account session @selected-account] [:wallet-connect/change-session-account topic @selected-account]))]]])))
+         #(re-frame/dispatch (if (= wc-version 1) [:wallet-connect-legacy/change-session-account session-legacy @selected-account] [:wallet-connect/change-session-account topic @selected-account]))]]])))
 
 (defview session-proposal-sheet [{:keys [name icons wc-version]}]
   (letsubs [visible-accounts [:visible-accounts-without-watch-only]

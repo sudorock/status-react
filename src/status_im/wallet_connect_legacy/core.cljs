@@ -136,7 +136,7 @@
      :hide-wallet-connect-success-sheet nil
      :wc-1-kill-session connector
      :db (-> db
-             (assoc :wallet-connect-legacy/sessions (remove session sessions))
+             (assoc :wallet-connect-legacy/sessions (filter #(not= (:connector %) connector) sessions))
              (dissoc :wallet-connect/session-managed))}))
 
 (fx/defn pair-session
@@ -158,7 +158,7 @@
         session (first (filter #(= (:connector %) connector) sessions))
         updated-session (assoc-in session [:params 0 :accounts] accounts-new)]
     {:db (-> db
-             (assoc :wallet-connect-legacy/sessions (assoc sessions (.indexOf sessions session) updated-session))
+             (assoc :wallet-connect-legacy/sessions (conj (filter #(not= (:connector %) connector) sessions) updated-session))
              (dissoc :wallet-connect/session-managed))}))
 
 (fx/defn wallet-connect-legacy-complete-transaction
