@@ -4,8 +4,8 @@
 , meta, source
 , platform ? "android"
 , architectures ? [ "arm64" "arm" "x86" ]
-, goBuildFlags ? [ "-X node.OpenseaKeyFromEnv=OPENSEA_API_KEY" ]
-, goBuildLdFlags ? [ ]
+, goBuildFlags ? [ ]
+, goBuildLdFlags ? [ "-X node.OpenseaKeyFromEnv=OPENSEA_API_KEY" ]
 , outputFileName ? "status-go-${source.shortRev}-${platform}.aar" }:
 
 let
