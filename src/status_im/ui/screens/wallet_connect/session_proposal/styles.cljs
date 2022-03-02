@@ -1,12 +1,6 @@
 (ns status-im.ui.screens.wallet-connect.session-proposal.styles
   (:require [quo.design-system.colors :as colors]))
 
-(defn acc-sheet []
-  {:background-color        (:ui-background @colors/theme)
-   :border-top-right-radius 16
-   :border-top-left-radius  16
-   :padding-bottom          1})
-
 (defn toolbar-container [background-color]
   {:height 36
    :border-radius 18
@@ -20,20 +14,6 @@
   {:flex-grow 1
    :margin-right 3})
 
-(def success-sheet-container
-  {:flex 1
-   :align-items :center})
-
-(def success-sheet-content
-  {:flex 1
-   :align-items :center})
-
-(def success-sheet-header-container
-  {:flex-direction :row
-   :align-items :center
-   :margin-top 10
-   :margin-bottom 16})
-
 (defn dapp-logo []
   {:width            120
    :height           120
@@ -44,26 +24,15 @@
    :border-color (:interactive-02 @colors/theme)
    :padding 5})
 
-(def icon-container
-  {})
-
-(defn circle [default-spacing?]
-  {:margin-right (if default-spacing? 4 8)})
-
 (def sheet-body-container
   {:flex 1
    :align-items :center})
 
-(def success-sheet-title
-  {:margin-bottom 16})
-
-(def success-sheet-button-container
-  {:padding-horizontal 16
-   :width "100%"
-   :flex-direction :row})
-
-(def success-sheet-button
-  {:flex 1})
+(defn acc-sheet []
+  {:background-color        (:ui-background @colors/theme)
+   :border-top-right-radius 16
+   :border-top-left-radius  16
+   :padding-bottom          1})
 
 (defn proposal-sheet-container []
   {:background-color (:ui-background @colors/theme)
@@ -87,42 +56,28 @@
   {:align-items :center
    :margin-top 21})
 
-(def proposal-title
-  {})
-
-(def proposal-description
-  {:margin-vertical 16})
-
 (def message-title
   {:margin-top 10
    :margin-bottom 14
    :margin-horizontal 72.5
    :text-align :center})
 
-(defn footer []
+(defn proposal-buttons-container []
   {:width "100%"
    :height 76
    :border-color colors/gray-lighter
-   :border-top-width 1})
-
-(def proposal-buttons-container
-  {:flex 1
+   :border-top-width 1
+   :flex 1
    :flex-direction :row
    :justify-content :space-between
    :align-items :center
    :padding-horizontal 16})
 
-(def wallet-picker-container
-  {:height 80})
-
-(def proposal-button-left
-  {})
-
-(def proposal-button-right
-  {})
-
-(def success-button-container
-  {:flex 1
+(defn success-button-container []
+  {:width "100%"
+   :height 76
+   :border-color colors/gray-lighter
+   :border-top-width 1
    :flex-direction :row
    :justify-content :flex-end
    :align-items :center
