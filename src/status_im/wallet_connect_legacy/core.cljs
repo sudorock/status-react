@@ -51,7 +51,7 @@
   [{:keys [db] :as cofx} request-event connector]
   (let [proposal (types/js->clj request-event)
         params (first (:params proposal))
-        metadata (merge (:peerMeta params) {:wc-version 1})
+        metadata (merge (:peerMeta params) {:wc-version constants/wallet-connect-version-1})
         networks (get db :networks/networks)
         current-network-id (get db :networks/current-network)
         current-network (get networks current-network-id)
@@ -63,7 +63,7 @@
   {:events [:wallet-connect-legacy/created]}
   [{:keys [db]} session]
   (let [connector (get db :wallet-connect-legacy/proposal-connector)
-        session (merge (types/js->clj session) {:wc-version 1
+        session (merge (types/js->clj session) {:wc-version constants/wallet-connect-version-1
                                                 :connector connector})
         params (first (:params session))
         metadata (:peerMeta params)
@@ -166,7 +166,6 @@
   [{:keys [db]} message-id connector result]
   (let [response {:id message-id
                   :result result}]
-    (.approveRequest connector (clj->js response))
     {:db (assoc db :wallet-connect-legacy/response response)
      :wc-1-approve-request [connector response]}))
 
@@ -202,16 +201,6 @@
                                :on-error  [:wallet-connect-legacy.dapp/transaction-on-error message-id connector]}))))
       (when (#{"eth_accounts" "eth_coinbase"} method)
         (wallet-connect-legacy-complete-transaction cofx message-id connector (if (= method "eth_coinbase") linked-address [linked-address]))))))
-
-(def permissioned-method
-  #{"eth_accounts" "eth_coinbase" "eth_sendTransaction" "eth_sign"
-    "keycard_signTypedData"
-    "eth_signTypedData" "personal_sign" "personal_ecRecover"})
-
-(defn has-permissions? [{:dapps/keys [permissions]} dapp-name method]
-  (boolean
-   (and (permissioned-method method)
-        (not (some #{constants/dapp-permission-web3} (get-in permissions [dapp-name :permissions]))))))
 
 (fx/defn wallet-connect-legacy-send-async-read-only
   [{:keys [db] :as cofx} payload id connector]
