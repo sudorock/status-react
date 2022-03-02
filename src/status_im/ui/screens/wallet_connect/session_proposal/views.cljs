@@ -45,17 +45,16 @@
 
 (defn account-selector [accounts selected-account on-select]
   [react/view styles/account-selector-container
-   [react/view
-    [quo/text {:size :small} (i18n/label :t/select-account)]
-    [list/flat-list {:data        accounts
-                     :key-fn      :address
-                     :render-fn   render-account
-                     :render-data {:selected-account selected-account
-                                   :on-select on-select}
-                     :horizontal  true
-                     :shows-horizontal-scroll-indicator false
-                     :extraData @selected-account
-                     :style styles/account-selector-list}]]])
+   [quo/text {:size :small} (i18n/label :t/select-account)]
+   [list/flat-list {:data        accounts
+                    :key-fn      :address
+                    :render-fn   render-account
+                    :render-data {:selected-account selected-account
+                                  :on-select on-select}
+                    :horizontal  true
+                    :shows-horizontal-scroll-indicator false
+                    :extra-data @selected-account
+                    :style styles/account-selector-list}]])
 
 (defn account-picker [accounts selected-account {:keys [on-press on-select]}]
   (if (> (count accounts) 1)
@@ -67,7 +66,7 @@
                          :on-press on-press}]]))
 
 (defview success-sheet-view [{:keys [topic]}]
-  (letsubs [visible-accounts @(re-frame/subscribe [:visible-accounts-without-watch-only])
+  (letsubs [visible-accounts [:visible-accounts-without-watch-only]
             dapps-account [:dapps-account]
             sessions [:wallet-connect/sessions]
             managed-session [:wallet-connect/session-managed]]
@@ -79,42 +78,38 @@
           address (last (string/split (first accounts) #":"))
           account (first (filter #(= (:address %) address) visible-accounts))
           selected-account (reagent/atom account)]
-      [react/view (styles/acc-sheet)
-       [react/view (styles/proposal-sheet-container)
-        [react/view (styles/proposal-sheet-header)
+      [react/view (styles/proposal-sheet-container)
+       [react/view (styles/proposal-sheet-header)
+        [quo/text {:weight :bold
+                   :size   :large}
+         (i18n/label :t/connection-request)]]
+       [react/image {:style (styles/dapp-logo)
+                     :source {:uri icon-uri}}]
+       [react/view styles/sheet-body-container
+        [react/view styles/proposal-title-container
          [quo/text {:weight :bold
                     :size   :large}
-          (i18n/label :t/connection-request)]]
-        [react/image {:style (styles/dapp-logo)
-                      :source {:uri icon-uri}}]
-        [react/view styles/sheet-body-container
-         [react/view styles/proposal-title-container
-          [quo/text {:weight :bold
-                     :size   :large}
-           name]
-          [quo/text {:weight :regular
-                     :size   :large
-                     :style  styles/proposal-title}
-           (i18n/label :t/connected)]]]
-        [account-picker
-         (vector dapps-account)
-         selected-account
-         {:on-press #(do
-                       (re-frame/dispatch [:wallet-connect/manage-app session])
-                       (reset! show-account-selector? true))}]
-        [quo/text {:weight :regular
-                   :color :secondary
-                   :style  styles/message-title}
-         (i18n/label :t/manage-connections)]
-        [react/view (styles/footer)
-         [react/view styles/success-button-container
-          [react/view styles/proposal-button-right
-           [quo/button
-            {:theme     :accent
-             :on-press  #(do
-                           (reset! show-account-selector? false)
-                           (re-frame/dispatch [:hide-wallet-connect-success-sheet]))}
-            (i18n/label :t/close)]]]]]
+          name]
+         [quo/text {:weight :regular
+                    :size   :large}
+          (i18n/label :t/connected)]]]
+       [account-picker
+        (vector dapps-account)
+        selected-account
+        {:on-press #(do
+                      (re-frame/dispatch [:wallet-connect/manage-app session])
+                      (reset! show-account-selector? true))}]
+       [quo/text {:weight :regular
+                  :color :secondary
+                  :style  styles/message-title}
+        (i18n/label :t/manage-connections)]
+       [react/view (styles/success-button-container)
+        [quo/button
+         {:theme     :accent
+          :on-press  #(do
+                        (reset! show-account-selector? false)
+                        (re-frame/dispatch [:hide-wallet-connect-success-sheet]))}
+         (i18n/label :t/close)]]
        (when managed-session
          (if platform/ios?
            [react/blur-view {:style (styles/blur-view)
@@ -156,40 +151,35 @@
          #(re-frame/dispatch [:wallet-connect/change-session-account topic @selected-account])]]])))
 
 (defview session-proposal-sheet [{:keys [name icons]}]
-  (let [visible-accounts @(re-frame/subscribe [:visible-accounts-without-watch-only])
-        dapps-account @(re-frame/subscribe [:dapps-account])
-        icon-uri (when (and icons (> (count icons) 0)) (first icons))
-        selected-account (reagent/atom dapps-account)]
-    [react/view (styles/acc-sheet)
-     [react/view (styles/proposal-sheet-container)
-      [react/view (styles/proposal-sheet-header)
-       [quo/text {:weight :bold
-                  :size   :large}
-        (i18n/label :t/connection-request)]]
-      [react/image {:style (styles/dapp-logo)
-                    :source {:uri icon-uri}}]
-      [react/view styles/sheet-body-container
-       [react/view styles/proposal-title-container
+  (letsubs [visible-accounts [:visible-accounts-without-watch-only]
+            dapps-account [:dapps-account]]
+    (let [icon-uri (when (and icons (> (count icons) 0)) (first icons))
+          selected-account (reagent/atom dapps-account)]
+      [react/view (styles/proposal-sheet-container)
+       [react/view (styles/proposal-sheet-header)
         [quo/text {:weight :bold
                    :size   :large}
-         (str name " ")]
-        [quo/text {:weight :regular
-                   :size   :large
-                   :style  styles/proposal-title}
-         (i18n/label :t/wallet-connect-proposal-title)]]]
-      [account-picker visible-accounts selected-account]
-      [react/view (merge (styles/footer) (when (= (count visible-accounts) 1) {:margin-top 12}))
-       [react/view styles/proposal-buttons-container
-        [react/view styles/proposal-button-left
-         [quo/button
-          {:type :secondary
-           :on-press #(re-frame/dispatch [:wallet-connect/reject-proposal])}
-          (i18n/label :t/reject)]]
-        [react/view styles/proposal-button-right
-         [quo/button
-          {:theme     :accent
-           :on-press  #(re-frame/dispatch [:wallet-connect/approve-proposal @selected-account])}
-          (i18n/label :t/connect)]]]]]]))
+         (i18n/label :t/connection-request)]]
+       [react/image {:style (styles/dapp-logo)
+                     :source {:uri icon-uri}}]
+       [react/view styles/sheet-body-container
+        [react/view styles/proposal-title-container
+         [quo/text {:weight :bold
+                    :size   :large}
+          (str name " ")]
+         [quo/text {:weight :regular
+                    :size   :large}
+          (i18n/label :t/wallet-connect-proposal-title)]]]
+       [account-picker visible-accounts selected-account]
+       [react/view (merge (styles/proposal-buttons-container) (when (= (count visible-accounts) 1) {:margin-top 12}))
+        [quo/button
+         {:type :secondary
+          :on-press #(re-frame/dispatch [:wallet-connect/reject-proposal])}
+         (i18n/label :t/reject)]
+        [quo/button
+         {:theme     :accent
+          :on-press  #(re-frame/dispatch [:wallet-connect/approve-proposal @selected-account])}
+         (i18n/label :t/connect)]]])))
 
 (defview wallet-connect-proposal-sheet []
   (letsubs [proposal-metadata [:wallet-connect/proposal-metadata]]
