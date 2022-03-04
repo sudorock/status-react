@@ -54,7 +54,7 @@ in buildGo116Package {
 
   # Build the Go library using gomobile for each of the configured platforms
   buildPhase = let
-    ldFlags = [ "-extldflags=-Wl,--allow-multiple-definition" ] ++ goBuildLdFlags;
+    ldFlags = [ "-extldflags=-Wl,--allow-multiple-definition,-X node.OpenseaKeyFromEnv=$OPENSEA_API_KEY" ] ++ goBuildLdFlags;
     CGO_LDFLAGS = concatStringsSep " " ldFlags;
   in ''
     runHook preBuild
