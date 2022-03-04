@@ -29,6 +29,7 @@ let
   goBuildLdFlags = paramsLdFlags ++ [
     "-s" # -s disabled symbol table
     "-w" # -w disables DWARF debugging information
+    "-X node.OpenseaKeyFromEnv=$OPENSEA_API_KEY"
   ];
 
   goBuildFlags = [ "-v" ];

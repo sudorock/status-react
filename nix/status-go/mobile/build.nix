@@ -5,7 +5,7 @@
 , platform ? "android"
 , architectures ? [ "arm64" "arm" "x86" ]
 , goBuildFlags ? [ ]
-, goBuildLdFlags ? [ "-X node.OpenseaKeyFromEnv=$OPENSEA_API_KEY" ]
+, goBuildLdFlags ? [ ]
 , outputFileName ? "status-go-${source.shortRev}-${platform}.aar" }:
 
 let
