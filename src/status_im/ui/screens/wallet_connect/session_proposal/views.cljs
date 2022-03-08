@@ -43,26 +43,26 @@
                  :weight (if account-selected? :medium :regular)}
        name]]]))
 
-(defn account-selector [accounts selected-account on-select]
+(defn account-selector [accounts selected-account-atom on-select]
   [react/view styles/account-selector-container
    [quo/text {:size :small} (i18n/label :t/select-account)]
    [list/flat-list {:data        accounts
                     :key-fn      :address
                     :render-fn   render-account
-                    :render-data {:selected-account selected-account
+                    :render-data {:selected-account selected-account-atom
                                   :on-select on-select}
                     :horizontal  true
                     :shows-horizontal-scroll-indicator false
-                    :extra-data @selected-account
+                    :extra-data @selected-account-atom
                     :style styles/account-selector-list}]])
 
-(defn account-picker [accounts selected-account {:keys [on-press on-select]}]
+(defn account-picker [accounts selected-account-atom {:keys [on-press on-select]}]
   (if (> (count accounts) 1)
     [react/view {:style styles/account-selector-wrapper}
-     [account-selector accounts selected-account on-select]]
+     [account-selector accounts selected-account-atom on-select]]
     [react/touchable-opacity {:style styles/single-account-container}
-     [toolbar-selection {:text (:name @selected-account)
-                         :background-color (:color @selected-account)
+     [toolbar-selection {:text (:name @selected-account-atom)
+                         :background-color (:color @selected-account-atom)
                          :on-press on-press}]]))
 
 (defview success-sheet-view [{:keys [topic]}]
@@ -77,7 +77,7 @@
           icon-uri (when (and icons (> (count icons) 0)) (first icons))
           address (last (string/split (first accounts) #":"))
           account (first (filter #(= (:address %) address) visible-accounts))
-          selected-account (reagent/atom account)]
+          selected-account-atom (reagent/atom account)]
       [react/view (styles/proposal-sheet-container)
        [react/view (styles/proposal-sheet-header)
         [quo/text {:weight :bold
@@ -95,7 +95,7 @@
           (i18n/label :t/connected)]]]
        [account-picker
         (vector dapps-account)
-        selected-account
+        selected-account-atom
         {:on-press #(do
                       (re-frame/dispatch [:wallet-connect/manage-app session])
                       (reset! show-account-selector? true))}]
@@ -126,7 +126,7 @@
           {:keys [name icons url]} metadata
           icon-uri (when (and icons (> (count icons) 0)) (first icons))
           account-address (last (string/split (first accounts) #":"))
-          selected-account (reagent/atom (first (filter #(= (:address %) account-address) visible-accounts)))]
+          selected-account-atom (reagent/atom (first (filter #(= (:address %) account-address) visible-accounts)))]
       [react/view {:style (merge (styles/acc-sheet) {:background-color "rgba(0,0,0,0)"})}
        [react/linear-gradient {:colors ["rgba(0,0,0,0)" "rgba(0,0,0,0.3)"]
                                :start {:x 0 :y 0} :end {:x 0 :y 1}
@@ -147,14 +147,14 @@
           (i18n/label :t/disconnect)]]
         [account-selector
          visible-accounts
-         selected-account
-         #(re-frame/dispatch [:wallet-connect/change-session-account topic @selected-account])]]])))
+         selected-account-atom
+         #(re-frame/dispatch [:wallet-connect/change-session-account topic @selected-account-atom])]]])))
 
 (defview session-proposal-sheet [{:keys [name icons]}]
   (letsubs [visible-accounts [:visible-accounts-without-watch-only]
             dapps-account [:dapps-account]]
     (let [icon-uri (when (and icons (> (count icons) 0)) (first icons))
-          selected-account (reagent/atom dapps-account)]
+          selected-account-atom (reagent/atom dapps-account)]
       [react/view (styles/proposal-sheet-container)
        [react/view (styles/proposal-sheet-header)
         [quo/text {:weight :bold
@@ -170,7 +170,7 @@
          [quo/text {:weight :regular
                     :size   :large}
           (i18n/label :t/wallet-connect-proposal-title)]]]
-       [account-picker visible-accounts selected-account]
+       [account-picker visible-accounts selected-account-atom]
        [react/view (merge (styles/proposal-buttons-container) (when (= (count visible-accounts) 1) {:margin-top 12}))
         [quo/button
          {:type :secondary
@@ -178,7 +178,7 @@
          (i18n/label :t/reject)]
         [quo/button
          {:theme     :accent
-          :on-press  #(re-frame/dispatch [:wallet-connect/approve-proposal @selected-account])}
+          :on-press  #(re-frame/dispatch [:wallet-connect/approve-proposal @selected-account-atom])}
          (i18n/label :t/connect)]]])))
 
 (defview wallet-connect-proposal-sheet []
