@@ -76,9 +76,9 @@
 (re-frame/reg-fx
  :wc-2-init
  (fn []
-    (wallet-connect/init
-     #(re-frame/dispatch [:wallet-connect/client-init %])
-     #(log/error "[wallet-connect]" %))))
+   (wallet-connect/init
+    #(re-frame/dispatch [:wallet-connect/client-init %])
+    #(log/error "[wallet-connect]" %))))
 
 (re-frame/reg-fx
  :wc-2-subscribe-to-events
