@@ -6,8 +6,8 @@ import emoji
 import pytest
 from dateutil import parser
 
-from tests import marks
-from tests.base_test_case import MultipleDeviceTestCase, SingleDeviceTestCase, create_shared_drivers, \
+from tests import marks, test_dapp_name, test_dapp_url
+from tests.base_test_case import MultipleDeviceTestCase, create_shared_drivers, \
     MultipleSharedDeviceTestCase
 from views.sign_in_view import SignInView
 from selenium.common.exceptions import NoSuchElementException
@@ -231,8 +231,8 @@ class TestPublicChatMultipleDeviceMerged(MultipleSharedDeviceTestCase):
         self.errors.verify_no_errors()
 
 
-@pytest.mark.xdist_group(name="public_chat_1")
-class TestPublicChatOneDeviceMerged(MultipleSharedDeviceTestCase):
+@pytest.mark.xdist_group(name="public_chat_browser_1")
+class TestPublicChatBrowserOneDeviceMerged(MultipleSharedDeviceTestCase):
 
     @classmethod
     def setup_class(cls):
@@ -245,6 +245,7 @@ class TestPublicChatOneDeviceMerged(MultipleSharedDeviceTestCase):
 
     @marks.testrail_id(5675)
     @marks.critical
+    @marks.one_to_one_chat
     def test_public_fetch_more_history(self):
         self.home.just_fyi("Check that can fetch previous history for several days")
         device_time = parser.parse(self.drivers[0].device_time)
@@ -326,6 +327,151 @@ class TestPublicChatOneDeviceMerged(MultipleSharedDeviceTestCase):
             assert self.chat.user_name_text.text == '#' + chat_name
         except (AssertionError, NoSuchElementException):
             self.driver.fail("Public chat '%s' is not opened" % chat_name)
+
+    @marks.testrail_id(0)
+    @marks.critical
+    def test_browser_blocked_url(self):
+        dapp = self.home.dapp_tab_button.click()
+        for url in ('metamask.site', 'cryptokitties.domainname'):
+            dapp.just_fyi('Checking blocked website %s' % url)
+            dapp_detail = dapp.open_url(url)
+            dapp_detail.element_by_translation_id('browsing-site-blocked-title')
+            if dapp_detail.browser_refresh_page_button.is_element_displayed():
+                self.errors.append("Refresh button is present in blocked site")
+            dapp_detail.go_back_button.click()
+            dapp_detail.open_tabs_button.click()
+            dapp.element_by_text_part(url[:8]).click()
+            dapp_detail.continue_anyway_button.click()
+            if dapp_detail.element_by_text('This site is blocked').is_element_displayed():
+                self.errors.append("Failed to open Dapp after 'Continue anyway' tapped for %s" % url)
+            dapp_detail.open_tabs_button.click()
+            dapp_detail.empty_tab_button.click()
+        self.errors.verify_no_errors()
+
+    @marks.testrail_id(00000)
+    @marks.critical
+    def test_browser_connection_is_secure_not_secure_warning(self):
+        dapp = self.home.dapp_tab_button.click()
+        web_page = dapp.open_url('http://www.dvwa.co.uk')
+        web_page.url_edit_box_lock_icon.click_until_presence_of_element(
+            web_page.element_by_translation_id("browser-not-secure"))
+        web_page.open_tabs_button.click()
+        web_page.empty_tab_button.click()
+        dapp.just_fyi('Checking connection is secure for Airswap')
+        web_page = dapp.open_url('https://instant.airswap.io')
+        web_page.wait_for_d_aap_to_load()
+        web_page.url_edit_box_lock_icon.click_until_presence_of_element(
+            web_page.element_by_translation_id("browser-secure"))
+        web_page.open_tabs_button.click()
+        web_page.empty_tab_button.click()
+
+    @marks.testrail_id(0)
+    @marks.critical
+    def test_browser_delete_close_tabs(self):
+        dapp = self.home.dapp_tab_button.click()
+        urls = {
+            'google.com': 'Google',
+            'status.im': 'Status - Private',
+            'bbc.com': 'bbc.com'
+        }
+        for url in urls:
+            web_page = dapp.open_url(url)
+            web_page.open_tabs_button.click()
+            web_page.empty_tab_button.click()
+
+        self.home.just_fyi('Delete one tab')
+        web_page.remove_tab(name=urls['bbc.com'])
+        if web_page.element_by_text_part(urls['bbc.com']).is_element_displayed():
+            self.errors.append('Closed tab is present after deletion')
+
+        self.home.just_fyi('Close all tabs via "Close all", relogin and check that it is not reappearing')
+        web_page.close_all_button.click()
+        self.home.reopen_app()
+        web_page.dapp_tab_button.click()
+        web_page.open_tabs_button.click()
+        if web_page.element_by_text_part(urls['status.im']).is_element_displayed():
+            self.errors.append('Tabs are not closed or reappeared after re-login!')
+
+        self.errors.verify_no_errors()
+
+    @marks.testrail_id(0)
+    @marks.critical
+    def test_browser_bookmarks_create_edit_remove(self):
+        dapp = self.home.dapp_tab_button.click()
+
+        self.home.just_fyi('Add some url to bookmarks with default name')
+        web_page = dapp.open_url('status.im')
+        default_bookmark_name = web_page.add_to_bookmarks()
+        web_page.browser_previous_page_button.click()
+        if not web_page.element_by_text(default_bookmark_name).is_element_displayed():
+            self.errors.append("Bookmark with default name is not added!")
+
+        self.home.just_fyi('Add some url to bookmarks with custom name')
+        custom_name = 'Custom BBC'
+        dapp.open_url('bbc.com')
+        web_page.add_to_bookmarks(custom_name)
+        web_page.open_tabs_button.click()
+        web_page.empty_tab_button.click()
+        if not web_page.element_by_text(custom_name).is_element_displayed():
+            self.driver.fail("Bookmark with custom name is not added!")
+
+        self.home.just_fyi('Checking "Open in new tab"')
+        dapp.browser_entry_long_press(custom_name)
+        dapp.open_in_new_tab_button.click()
+        web_page.options_button.click()
+        if not web_page.element_by_translation_id('remove-favourite').is_element_displayed():
+            self.errors.append("Remove favourite is not shown on added bookmark!")
+        dapp.click_system_back_button()
+
+        self.home.just_fyi('Check deleting bookmark')
+        web_page.open_tabs_button.click()
+        web_page.empty_tab_button.click()
+        dapp.browser_entry_long_press(custom_name)
+        dapp.delete_bookmark_button.click()
+        if web_page.element_by_text(custom_name).is_element_displayed():
+            self.errors.append("Bookmark with custom name is not deleted!")
+
+        self.home.just_fyi('Check "Edit bookmark" and "Open in new tab"')
+        edited_name = 'My Fav Status'
+        dapp.browser_entry_long_press(default_bookmark_name)
+        dapp.edit_bookmark_button.click()
+        web_page.edit_bookmark_name(edited_name)
+        if not web_page.element_by_text(edited_name).is_element_displayed():
+            self.driver.fail("Edited bookmark name is not shown!")
+
+        self.errors.verify_no_errors()
+
+    @marks.testrail_id(5738)
+    @marks.high
+    def test_browser_web3_permissions(self):
+        self.home.home_button.double_click()
+
+        self.home.just_fyi('open Status Test Dapp, allow all and check permissions in Profile')
+        web_view = self.home.open_status_test_dapp()
+        dapp = self.home.dapp_tab_button.click()
+        profile = self.home.profile_button.click()
+        profile.privacy_and_security_button.click()
+        profile.dapp_permissions_button.click()
+        profile.element_by_text(test_dapp_name).click()
+        if not profile.element_by_text(self.home.status_account_name).is_element_displayed():
+            self.errors.append('Wallet permission was not granted')
+        if not profile.element_by_translation_id("chat-key").is_element_displayed():
+            self.errors.append('Contact code permission was not granted')
+
+        profile.just_fyi('revoke access and check that they are asked second time')
+        profile.revoke_access_button.click()
+        profile.back_button.click()
+        profile.dapp_tab_button.click()
+        web_view.open_tabs_button.click()
+        web_view.empty_tab_button.click()
+        dapp.open_url(test_dapp_url)
+        if not dapp.element_by_text_part(self.home.status_account_name).is_element_displayed():
+            self.errors.append('Wallet permission is not asked')
+        if dapp.allow_button.is_element_displayed():
+            dapp.allow_button.click(times_to_click=1)
+        if not dapp.element_by_translation_id("your-contact-code").is_element_displayed():
+            self.errors.append('Profile permission is not asked')
+        self.errors.verify_no_errors()
 
 
 class TestPublicChatMultipleDevice(MultipleDeviceTestCase):

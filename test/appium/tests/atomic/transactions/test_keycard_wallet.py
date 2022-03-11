@@ -156,6 +156,74 @@ class TestKeycardTxOneDeviceMerged(MultipleSharedDeviceTestCase):
             transactions_details.close_button.click()
         self.errors.verify_no_errors()
 
+    @marks.testrail_id(000000)
+    @marks.critical
+    def test_keycard_create_account_unlock_same_seed(self):
+        self.sign_in.driver.reset()
+        self.sign_in.just_fyi("Create keycard account and save seed phrase")
+        self.sign_in.accept_tos_checkbox.enable()
+        self.sign_in.get_started_button.click()
+        self.sign_in.generate_key_button.click_until_presence_of_element(self.sign_in.next_button)
+        self.sign_in.next_button.click_until_absense_of_element(self.sign_in.element_by_translation_id("intro-wizard-title2"))
+        keycard_flow = self.sign_in.keycard_storage_button.click()
+        keycard_flow.confirm_pin_and_proceed()
+        seed_phrase = keycard_flow.backup_seed_phrase()
+        self.sign_in.maybe_later_button.wait_for_visibility_of_element(30)
+        self.sign_in.maybe_later_button.click_until_presence_of_element(self.sign_in.lets_go_button)
+        self.sign_in.lets_go_button.click_until_absense_of_element(self.sign_in.lets_go_button)
+        self.sign_in.profile_button.wait_for_visibility_of_element(30)
+
+        self.sign_in.just_fyi('Check that after creating keycard account balance is 0, not ...')
+        wallet_1 = self.sign_in.wallet_button.click()
+        wallet_address = wallet_1.get_wallet_address()
+        wallet_1.wallet_button.double_click()
+        if wallet_1.status_account_total_usd_value.text != '0':
+            self.errors.append("Account USD value is not 0, it is %s" % wallet_1.status_account_total_usd_value.text)
+        public_key, default_username = self.sign_in.get_public_key_and_username(return_username=True)
+        profile_1 = self.sign_in.get_profile_view()
+        profile_1.logout()
+
+        profile_1.just_fyi('Check that can re-login with keycard account after account creation')
+        self.sign_in.multi_account_on_login_button.wait_for_visibility_of_element(5)
+        self.sign_in.multi_account_on_login_button.click()
+        if not keycard_flow.element_by_text_part(default_username).is_element_displayed():
+            self.errors.append("%s is not found on keycard login screen!" % default_username)
+        keycard_flow.enter_default_pin()
+        if not self.sign_in.home_button.is_element_displayed(10):
+            self.errors.append('Keycard user is not logged in')
+
+        self.sign_in.just_fyi('Unlock keycard multiaccount at attempt to restore same multiaccount from seed')
+        self.sign_in.profile_button.click()
+        profile_1.logout()
+        self.sign_in.access_key_button.click()
+        self.sign_in.enter_seed_phrase_button.click()
+        self.sign_in.seedphrase_input.click()
+        self.sign_in.seedphrase_input.set_value(seed_phrase)
+        self.sign_in.next_button.click()
+        self.sign_in.element_by_translation_id("unlock", uppercase=True).click()
+        keycard_flow.enter_default_pin()
+        device_1_home = self.sign_in.home_button.click()
+        device_1_home.plus_button.click()
+        if not device_1_home.start_new_chat_button.is_element_displayed():
+            self.errors.append("Can't proceed using account after it's re-recover twice.")
+
+        self.sign_in.just_fyi("Restore same multiaccount from backed up seed phrase on another device")
+        self.sign_in.driver.reset()
+        self.sign_in.recover_access(seed_phrase)
+
+        self.sign_in.just_fyi("Check username and wallet address on restored account")
+        wallet_2 = self.sign_in.wallet_button.click()
+        wallet_address_2 = wallet_2.get_wallet_address()
+        wallet_2.wallet_button.double_click()
+        if wallet_address != wallet_address_2:
+            self.errors.append('Wallet address on restored multiaccount is not equal to created keycard multiaccount')
+        public_key_2, default_username_2 = self.sign_in.get_public_key_and_username(return_username=True)
+        if public_key != public_key_2:
+            self.errors.append('Public key on restored multiaccount is not equal to created keycard multiaccount')
+        if default_username_2 != default_username:
+            self.errors.append('Username on restored multiaccount is not equal to created keycard multiaccount')
+        self.errors.verify_no_errors()
+
 
 class TestTransactionWalletSingleDevice(SingleDeviceTestCase):
 
