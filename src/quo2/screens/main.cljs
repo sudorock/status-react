@@ -6,8 +6,11 @@
             [quo2.screens.button :as button]
             [quo2.screens.text :as text]
             [quo2.screens.tabs :as tabs]
+            [quo2.screens.mock :as mock]
             [quo2.screens.segmented :as segmented]
-            [quo.core :as quo]))
+            [quo.core :as quo]
+            [quo2.components.switcher :as switcher]
+            [quo2.components.bottom-tabs :as bottom-tabs]))
 
 (def screens [{:name      :quo2-texts
                :insets    {:top false}
@@ -46,18 +49,35 @@
     [quo/text "Set dark theme"]]])
 
 (defn main-screen []
-  [rn/scroll-view {:flex               1
-                   :padding-vertical   8
-                   :padding-horizontal 16
-                   :background-color   (:ui-background @colors/theme)}
-   [theme-switcher]
-   [rn/view
-    (for [{:keys [name]} screens]
-      ^{:key name}
-      [rn/touchable-opacity {:on-press #(re-frame/dispatch [:navigate-to name])}
-       [rn/view {:style {:padding-vertical 8}}
-        [quo/text (str "Preview " name)]]])]])
+  [:<>
+   [rn/scroll-view {:flex               1
+                    :padding-vertical   8
+                    :padding-horizontal 16
+                    :background-color   (:ui-background @colors/theme)}
+    [theme-switcher]
+    [rn/view
+     (for [{:keys [name]} screens]
+       ^{:key name}
+       [rn/touchable-opacity {:on-press #(re-frame/dispatch [:navigate-to name])}
+        [rn/view {:style {:padding-vertical 8}}
+         [quo/text (str "Preview " name)]]])]]
+   [bottom-tabs/bottom-tabs]])
 
 (def main-screens [{:name      :quo2-preview
                     :insets    {:top false}
-                    :component main-screen}])
+                    :component main-screen}
+                   {:name      :quo2-mock-screen2
+                    :insets    {:top false}
+                    :component mock/screen2}
+                   {:name      :quo2-mock-screen3
+                    :insets    {:top false}
+                    :component mock/screen3}
+                   {:name      :quo2-mock-screen4
+                    :insets    {:top false}
+                    :component mock/screen4}
+                   {:name      :quo2-exit-screen
+                    :insets    {:top false}
+                    :component mock/exit-screen}
+                   {:name      :quo2-switcher-screen
+                    :insets    {:top false}
+                    :component switcher/switcher-screen}])

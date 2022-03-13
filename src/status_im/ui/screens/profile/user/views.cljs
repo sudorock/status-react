@@ -19,6 +19,7 @@
             [status-im.utils.utils :as utils]
             [status-im.ethereum.stateofus :as stateofus]
             [quo.design-system.spacing :as spacing]
+            [quo2.navigation :as quo2-navigation]
             [status-im.ui.screens.profile.visibility-status.views :as visibility-status])
   (:require-macros [status-im.utils.views :as views]))
 
@@ -122,7 +123,7 @@
          :title               "Quo2.0 Preview"
          :accessibility-label :appearance-settings-button
          :chevron             true
-         :on-press            #(re-frame/dispatch [:navigate-to :quo2-preview])}])
+         :on-press            #(re-frame/dispatch [::quo2-navigation/quo2-init-root :quo2-tabs-stack])}])
      [quo/list-item
       {:icon                :main-icons/appearance
        :title               (i18n/label :t/appearance)

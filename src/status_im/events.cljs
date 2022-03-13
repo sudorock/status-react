@@ -59,6 +59,8 @@
             status-im.wallet.choose-recipient.core
             [status-im.wallet.core :as wallet]
             status-im.wallet.custom-tokens.core
+            quo2.navigation.core
+            quo2.navigation
             [status-im.navigation.core :as navigation.core]
             [status-im.multiaccounts.login.core :as login.core]
             [status-im.signing.core :as signing]))
